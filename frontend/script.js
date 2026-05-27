@@ -1,18 +1,18 @@
-// ============================================
-// NEURASCRIBE — Frontend Logic
-// ============================================
-
 // State
 let selectedTone = "professional";
 let selectedLength = "medium";
 let currentBlog = "";
+
+// API URL — automatically detect karega
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:3000"
+  : ""; // Render pe same origin se serve hoga
 
 // ── Neural Canvas Animation ──────────────────
 (function initNeuralCanvas() {
   const canvas = document.getElementById("neural-canvas");
   const ctx = canvas.getContext("2d");
   let nodes = [];
-  let animId;
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -35,8 +35,6 @@ let currentBlog = "";
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Update nodes
     nodes.forEach((n) => {
       n.x += n.vx;
       n.y += n.vy;
@@ -45,7 +43,6 @@ let currentBlog = "";
       if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
     });
 
-    // Draw connections
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const dx = nodes[i].x - nodes[j].x;
@@ -63,7 +60,6 @@ let currentBlog = "";
       }
     }
 
-    // Draw nodes
     nodes.forEach((n) => {
       const glow = (Math.sin(n.pulse) + 1) * 0.5;
       ctx.beginPath();
@@ -72,14 +68,10 @@ let currentBlog = "";
       ctx.fill();
     });
 
-    animId = requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
   }
 
-  window.addEventListener("resize", () => {
-    resize();
-    createNodes();
-  });
-
+  window.addEventListener("resize", () => { resize(); createNodes(); });
   resize();
   createNodes();
   draw();
@@ -111,11 +103,10 @@ async function generateBlog() {
     return;
   }
 
-  // UI: Loading state
   setLoadingState(true);
 
   try {
-    const response = await fetch("http://localhost:3000/api/generate-blog", {
+    const response = await fetch(`${API_BASE}/api/generate-blog`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -138,7 +129,7 @@ async function generateBlog() {
   } catch (error) {
     console.error("Error:", error);
     showToast("✗ " + (error.message || "Something went wrong. Try again."));
-    setLoadingState(false, true); // show empty again
+    setLoadingState(false, true);
   }
 }
 
@@ -150,16 +141,13 @@ function displayBlog(markdownText, wordCount) {
   const statsBar = document.getElementById("statsBar");
   const outputActions = document.getElementById("outputActions");
 
-  // Hide loading, empty
   loadingState.classList.add("hidden");
   emptyState.classList.add("hidden");
 
-  // Convert simple markdown to HTML
   const html = markdownToHTML(markdownText);
   output.innerHTML = html;
   output.classList.remove("hidden");
 
-  // Update stats
   const words = wordCount || markdownText.split(" ").length;
   const chars = markdownText.length;
   const readTime = Math.ceil(words / 200);
@@ -169,13 +157,11 @@ function displayBlog(markdownText, wordCount) {
   statsBar.style.display = "flex";
   outputActions.style.display = "flex";
 
-  // Reset button
   const btn = document.getElementById("generateBtn");
   btn.disabled = false;
   btn.querySelector(".btn-idle").classList.remove("hidden");
   btn.querySelector(".btn-loading").classList.add("hidden");
 
-  // Animate in paragraphs
   const elements = output.querySelectorAll("h2, h3, p, li");
   elements.forEach((el, i) => {
     el.style.opacity = "0";
@@ -191,25 +177,17 @@ function displayBlog(markdownText, wordCount) {
 // ── Markdown → HTML ──────────────────────────
 function markdownToHTML(text) {
   let html = text
-    // Headers
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^#### (.+)$/gm, "<h3>$1</h3>")
-    // Bold
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    // Italic
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    // Unordered lists
     .replace(/^- (.+)$/gm, "<li>$1</li>")
     .replace(/^• (.+)$/gm, "<li>$1</li>")
-    // Ordered lists
     .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
-    // Paragraphs (double newline)
     .replace(/\n\n/g, "</p><p>")
-    // Clean up
     .replace(/\n/g, " ");
 
-  // Wrap consecutive <li> in <ul>
   html = html.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/gs, (match) => {
     return "<ul>" + match + "</ul>";
   });
@@ -217,7 +195,7 @@ function markdownToHTML(text) {
   return "<p>" + html + "</p>";
 }
 
-// ── Loading State Toggle ─────────────────────
+// ── Loading State ────────────────────────────
 function setLoadingState(isLoading, showEmpty = false) {
   const btn = document.getElementById("generateBtn");
   const emptyState = document.getElementById("emptyState");
@@ -236,13 +214,11 @@ function setLoadingState(isLoading, showEmpty = false) {
     btn.querySelector(".btn-idle").classList.remove("hidden");
     btn.querySelector(".btn-loading").classList.add("hidden");
     loadingState.classList.add("hidden");
-    if (showEmpty) {
-      emptyState.classList.remove("hidden");
-    }
+    if (showEmpty) emptyState.classList.remove("hidden");
   }
 }
 
-// ── Copy Blog ────────────────────────────────
+// ── Copy & Download ──────────────────────────
 function copyBlog() {
   if (!currentBlog) return;
   navigator.clipboard.writeText(currentBlog).then(() => {
@@ -252,13 +228,10 @@ function copyBlog() {
   });
 }
 
-// ── Download Blog ────────────────────────────
 function downloadBlog() {
   if (!currentBlog) return;
   const topic = document.getElementById("topicInput").value.trim();
-  const filename = topic
-    ? topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)
-    : "blog";
+  const filename = topic ? topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) : "blog";
   const blob = new Blob([currentBlog], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -277,7 +250,7 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove("show"), 3000);
 }
 
-// ── Enter key on textarea ────────────────────
+// ── Enter shortcut ───────────────────────────
 document.getElementById("topicInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.ctrlKey) generateBlog();
 });
