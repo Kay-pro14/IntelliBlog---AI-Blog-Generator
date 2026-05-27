@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IntelliBlog — AI Blog Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Neural network nodes -->
+  <canvas id="neural-canvas"></canvas>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span class="logo-text">Intelli<em>Blog</em></span>
+    </div>
+    <div class="header-tag">AI · BLOG · GENERATOR</div>
+    <div class="status-pill">
+      <span class="pulse"></span>
+      <span>MODEL ONLINE</span>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-line"></span>
+      <span>COGNITIVE CONTENT ENGINE v2.0</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="hero-title">
+      Write Less.<br />
+      <em>Think More.</em>
+    </h1>
+    <p class="hero-sub">
+      Feed a topic. Watch intelligence write.
+    </p>
+  </section>
+
+  <!-- Main Generator Card -->
+  <main class="generator-wrap">
+    <div class="gen-card">
+
+      <!-- Left Panel: Input -->
+      <div class="panel panel-input">
+        <div class="panel-label">
+          <span class="panel-num">01</span>
+          <span>CONFIGURE GENERATION</span>
+        </div>
+
+        <!-- Topic Input -->
+        <div class="field-group">
+          <label class="field-label">BLOG TOPIC <span class="req">*</span></label>
+          <div class="input-wrap">
+            <textarea
+              id="topicInput"
+              class="field-textarea"
+              placeholder="e.g. How AI is changing the future of healthcare..."
+              rows="3"
+            ></textarea>
+            <div class="input-border-anim"></div>
+          </div>
+        </div>
+
+        <!-- Keywords -->
+        <div class="field-group">
+          <label class="field-label">KEYWORDS <span class="opt">(optional)</span></label>
+          <div class="input-wrap">
+            <input
+              id="keywordsInput"
+              class="field-input"
+              type="text"
+              placeholder="e.g. AI, machine learning, future..."
+            />
+            <div class="input-border-anim"></div>
+          </div>
+        </div>
+
+        <!-- Tone Selector -->
+        <div class="field-group">
+          <label class="field-label">TONE</label>
+          <div class="chip-group" id="toneGroup">
+            <button class="chip active" data-val="professional">Professional</button>
+            <button class="chip" data-val="casual">Casual</button>
+            <button class="chip" data-val="educational">Educational</button>
+            <button class="chip" data-val="creative">Creative</button>
+          </div>
+        </div>
+
+        <!-- Length Selector -->
+        <div class="field-group">
+          <label class="field-label">LENGTH</label>
+          <div class="chip-group" id="lengthGroup">
+            <button class="chip" data-val="short">Short ~300w</button>
+            <button class="chip active" data-val="medium">Medium ~700w</button>
+            <button class="chip" data-val="long">Long ~1200w</button>
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="gen-btn" id="generateBtn" onclick="generateBlog()">
+          <span class="btn-idle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>
+            GENERATE BLOG
+          </span>
+          <span class="btn-loading hidden">
+            <span class="spinner"></span>
+            NEURAL WRITING...
+          </span>
+        </button>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar" style="display:none">
+          <div class="stat">
+            <span class="stat-val" id="wordCount">0</span>
+            <span class="stat-lbl">WORDS</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-val" id="readTime">0</span>
+            <span class="stat-lbl">MIN READ</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-val" id="charCount">0</span>
+            <span class="stat-lbl">CHARS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="panel-divider">
+        <div class="divider-line"></div>
+        <div class="divider-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="var(--accent)"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Right Panel: Output -->
+      <div class="panel panel-output">
+        <div class="panel-label">
+          <span class="panel-num">02</span>
+          <span>GENERATED CONTENT</span>
+          <div class="output-actions" id="outputActions" style="display:none">
+            <button class="action-btn" onclick="copyBlog()" title="Copy">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
+              COPY
+            </button>
+            <button class="action-btn" onclick="downloadBlog()" title="Download">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              SAVE
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-visual">
+            <div class="empty-ring ring-1"></div>
+            <div class="empty-ring ring-2"></div>
+            <div class="empty-ring ring-3"></div>
+            <div class="empty-core">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="var(--accent)" opacity="0.6"/></svg>
+            </div>
+          </div>
+          <p class="empty-text">Awaiting topic input.<br /><em>Your blog will appear here.</em></p>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state hidden" id="loadingState">
+          <div class="loading-lines">
+            <div class="loading-line" style="width:85%; animation-delay:0s"></div>
+            <div class="loading-line" style="width:65%; animation-delay:0.15s"></div>
+            <div class="loading-line" style="width:90%; animation-delay:0.3s"></div>
+            <div class="loading-line" style="width:55%; animation-delay:0.45s"></div>
+            <div class="loading-line" style="width:75%; animation-delay:0.6s"></div>
+            <div class="loading-line" style="width:80%; animation-delay:0.75s"></div>
+            <div class="loading-line" style="width:60%; animation-delay:0.9s"></div>
+          </div>
+          <p class="loading-text">Neural network composing your blog...</p>
+        </div>
+
+        <!-- Blog Output -->
+        <div class="blog-output hidden" id="blogOutput"></div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>IntelliBlog·Built by Kajal Verma·<em>Powered by Groq API</em></span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
