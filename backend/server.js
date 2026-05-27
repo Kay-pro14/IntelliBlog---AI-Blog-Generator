@@ -1,16 +1,16 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: ["http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:5501", "http://127.0.0.1:5501", "http://localhost:3000"],
-  methods: ["GET", "POST"],
-}));
+app.use(cors());
 app.use(express.json());
-app.use(express.static("../frontend"));
+
+// Frontend serve karo — correct path
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "Server is running!", timestamp: new Date().toISOString() });
@@ -68,8 +68,8 @@ Write the complete blog post now:`;
 
     if (!response.ok) {
       console.error("Groq Error:", data);
-      if (response.status === 401) return res.status(401).json({ error: "Invalid Groq API Key! .env check karo." });
-      if (response.status === 429) return res.status(429).json({ error: "Rate limit. Thoda ruko aur try karo." });
+      if (response.status === 401) return res.status(401).json({ error: "Invalid Groq API Key!" });
+      if (response.status === 429) return res.status(429).json({ error: "Rate limit. Thoda ruko." });
       return res.status(500).json({ error: data.error?.message || "Groq API error" });
     }
 
@@ -89,7 +89,12 @@ Write the complete blog post now:`;
   }
 });
 
+// Baaki sab routes frontend pe bhejo
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 Server Running → http://localhost:${PORT}`);
-  console.log(`🔑 Groq Key: ${process.env.GROQ_API_KEY ? "✅ Loaded" : "❌ Missing — .env mein GROQ_API_KEY daalo!"}\n`);
+  console.log(`🔑 Groq Key: ${process.env.GROQ_API_KEY ? "✅ Loaded" : "❌ Missing!"}\n`);
 });
